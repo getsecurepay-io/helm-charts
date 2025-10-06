@@ -67,4 +67,4 @@ spec:
         effect: {{ .Values.tolerations.effects | quote }}
       {{- end }}
       imagePullSecrets:
-        - name: regcred
+        - name: default-secret
