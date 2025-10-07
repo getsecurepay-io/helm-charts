@@ -47,6 +47,19 @@ service:
     enabled: false # Set as `true` for apis that uses internal loadbalancer with apim
     annotations: 'service.beta.kubernetes.io/azure-load-balancer-internal: "true"'
 
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+
 # Environment Variables sources
 env:
   secret:

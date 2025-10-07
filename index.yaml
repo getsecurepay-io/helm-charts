@@ -3,12 +3,12 @@ entries:
   sidd:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-10-06T15:54:29.3169642+01:00"
+    created: "2025-10-07T16:32:20.7638711+01:00"
     description: A Helm chart for Kubernetes
-    digest: b0855a880f46d7c6dc728da4de631cacc9b6086721638b5f57105dc9b30beaef
+    digest: a1e68974f529fcdfc05533b001227367bbc21d17215236a229d6b31fa5986c45
     name: sidd
     type: application
     urls:
     - https://getsecurepay-io.github.io/helm-charts/sidd-0.1.0.tgz
     version: 0.1.0
-generated: "2025-10-06T15:54:29.315917+01:00"
+generated: "2025-10-07T16:32:20.7632417+01:00"
