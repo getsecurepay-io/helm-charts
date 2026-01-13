@@ -26,12 +26,67 @@
 #         averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
 # {{- end -}}
 
-{{- if .Values.autoscaling.enabled -}}
+# {{- if .Values.autoscaling.enabled -}}
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: {{ .Values.deployment.name | quote }}
+#   namespace: {{ .Values.namespace | quote }}
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: {{ .Values.deployment.name }}
+
+#   minReplicas: {{ .Values.autoscaling.minReplicas }}
+#   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+
+#   metrics:
+#   {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       target:
+#         type: Utilization
+#         averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+#   {{- end }}
+
+#   {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+#   - type: Resource
+#     resource:
+#       name: memory
+#       target:
+#         type: Utilization
+#         averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+#   {{- end }}
+
+#   behavior:
+#     scaleUp:
+#       stabilizationWindowSeconds: 0
+#       selectPolicy: Max
+#       policies:
+#         - type: Percent
+#           value: 100
+#           periodSeconds: 60
+#         - type: Pods
+#           value: 2
+#           periodSeconds: 60
+
+#     scaleDown:
+#       stabilizationWindowSeconds: 300
+#       selectPolicy: Min
+#       policies:
+#         - type: Percent
+#           value: 20
+#           periodSeconds: 60
+# {{- end }}
+
+{{- if .Values.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ .Values.deployment.name | quote }}
-  namespace: {{ .Values.namespace | quote }}
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -41,42 +96,26 @@ spec:
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
 
+{{- if or .Values.autoscaling.metrics.cpu.enabled .Values.autoscaling.metrics.memory.enabled }}
   metrics:
-  {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
-  {{- end }}
-
-  {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
-  {{- end }}
+{{- if .Values.autoscaling.metrics.cpu.enabled }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.metrics.cpu.targetAverageUtilization }}
+{{- end }}
+{{- if .Values.autoscaling.metrics.memory.enabled }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.metrics.memory.targetAverageUtilization }}
+{{- end }}
+{{- end }}
 
   behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      selectPolicy: Max
-      policies:
-        - type: Percent
-          value: 100
-          periodSeconds: 60
-        - type: Pods
-          value: 2
-          periodSeconds: 60
-
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      selectPolicy: Min
-      policies:
-        - type: Percent
-          value: 20
-          periodSeconds: 60
+{{ toYaml .Values.autoscaling.behavior | indent 4 }}
 {{- end }}
