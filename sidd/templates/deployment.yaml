@@ -1,3 +1,74 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: {{ .Values.deployment.name | quote }}
+#   namespace: {{ .Values.namespace | quote }}
+# spec:
+#   replicas: {{ .Values.deployment.replicas }}
+#   selector:
+#     matchLabels:
+#       app: {{ .Values.deployment.name | quote }}
+#   template:
+#     metadata:
+#       annotations:
+#         rollme: {{ randAlphaNum 5 | quote }}
+#       labels:
+#         app: {{ .Values.deployment.name | quote }}
+#     spec:
+#       containers:
+#         - name: {{ .Values.deployment.name | quote }}
+#           image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
+#           imagePullPolicy: {{ .Values.deployment.pullPolicy }}
+#           ports:
+#           - containerPort: {{ .Values.deployment.port }}
+#           {{- if .Values.volume.bind }}
+#           volumeMounts:
+#           - name: {{ .Values.deployment.name | quote }}
+#             mountPath: {{ .Values.volume.path }}
+#           {{- end }}
+#           {{- if .Values.env }}
+#           envFrom:
+#             {{- if .Values.env.secret.create }}
+#             - secretRef:
+#                 name: {{ .Values.deployment.name | quote }}
+#             {{- end}}
+#             {{- if .Values.env.configmap.create }}
+#             - configMapRef:
+#                 name: {{ .Values.deployment.name | quote }}
+#             {{- end}}
+#           {{- end }}
+#           {{- if .Values.resources }}
+#           resources:
+#             {{- toYaml .Values.resources | nindent 12 }}
+#           {{- else }}
+#           resources:
+#             requests:
+#               cpu: "10m"
+#               memory: "50Mi"
+#             limits:
+#               cpu: "50m"
+#               memory: "100Mi"
+#           {{- end }}
+#       {{- if .Values.pvc.create }}
+#       volumes:
+#       - name: {{ .Values.deployment.name | quote }}
+#         persistentVolumeClaim:
+#           claimName: {{ .Values.pvc.name }}
+#       {{- end}}
+#       {{- if .Values.environment }}
+#       nodeSelector:
+#         environment: {{ .Values.environment.name | quote }}
+#       {{- end }}
+#       {{- if .Values.tolerations.enabled }}
+#       tolerations:
+#       - key: {{ .Values.tolerations.key | quote }}
+#         operator: {{ .Values.tolerations.operator | quote }} 
+#         value: {{ .Values.tolerations.value | quote }} 
+#         effect: {{ .Values.tolerations.effects | quote }}
+#       {{- end }}
+#       imagePullSecrets:
+#         - name: default-secret
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,29 +88,31 @@ spec:
     spec:
       containers:
         - name: {{ .Values.deployment.name | quote }}
-          image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
+          image: "{{ .Values.deployment.image }}:{{ .Values.deployment.tag }}"
           imagePullPolicy: {{ .Values.deployment.pullPolicy }}
           ports:
-          - containerPort: {{ .Values.deployment.port }}
-          {{- if .Values.volume.bind }}
+            - containerPort: {{ .Values.deployment.port }}
+
+          {{- if .Values.volumeMounts }}
           volumeMounts:
-          - name: {{ .Values.deployment.name | quote }}
-            mountPath: {{ .Values.volume.path }}
+{{ toYaml .Values.volumeMounts | nindent 12 }}
           {{- end }}
-          {{- if .Values.env }}
+
+          {{- if or .Values.env.secret.create .Values.env.configmap.create }}
           envFrom:
             {{- if .Values.env.secret.create }}
             - secretRef:
-                name: {{ .Values.deployment.name | quote }}
-            {{- end}}
+                name: {{ .Values.env.secret.name | default .Values.deployment.name | quote }}
+            {{- end }}
             {{- if .Values.env.configmap.create }}
             - configMapRef:
                 name: {{ .Values.deployment.name | quote }}
-            {{- end}}
+            {{- end }}
           {{- end }}
+
           {{- if .Values.resources }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+{{ toYaml .Values.resources | nindent 12 }}
           {{- else }}
           resources:
             requests:
@@ -49,22 +122,26 @@ spec:
               cpu: "50m"
               memory: "100Mi"
           {{- end }}
+
       {{- if .Values.pvc.create }}
       volumes:
-      - name: {{ .Values.deployment.name | quote }}
-        persistentVolumeClaim:
-          claimName: {{ .Values.pvc.name }}
-      {{- end}}
-      {{- if .Values.environment }}
-      nodeSelector:
-        environment: {{ .Values.environment.name | quote }}
+        - name: {{ .Values.deployment.name | quote }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
       {{- end }}
+
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+
       {{- if .Values.tolerations.enabled }}
       tolerations:
-      - key: {{ .Values.tolerations.key | quote }}
-        operator: {{ .Values.tolerations.operator | quote }} 
-        value: {{ .Values.tolerations.value | quote }} 
-        effect: {{ .Values.tolerations.effects | quote }}
+        - key: {{ .Values.tolerations.key | quote }}
+          operator: {{ .Values.tolerations.operator | quote }}
+          value: {{ .Values.tolerations.value | quote }}
+          effect: {{ .Values.tolerations.effects | quote }}
       {{- end }}
+
       imagePullSecrets:
         - name: default-secret
